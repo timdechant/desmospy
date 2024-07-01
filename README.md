@@ -18,7 +18,7 @@ c.y = 1/2 * c.x + 3
 c.show()
 ```
 
-[![Figure 1](img/README_fig1.png)](img/README_fig1.png)
+[![Figure 1](https://raw.githubusercontent.com/timdechant/desmospy/main/img/README_fig1.png)](https://raw.githubusercontent.com/timdechant/desmospy/main/img/README_fig1.png)
 
 More advanced plots can be created with comparisons and the <code>.define()</code> method:
 
@@ -32,7 +32,7 @@ c.define(a*x*y == 1)
 c.show()
 ```
 
-[![Figure 2](img/README_fig2.png)](img/README_fig2.png)
+[![Figure 2](https://raw.githubusercontent.com/timdechant/desmospy/main/img/README_fig2.png)](https://raw.githubusercontent.com/timdechant/desmospy/main/img/README_fig2.png)
 
 Equations and inequalities can also be combined; first let's define two ellipse regions.
 
@@ -50,7 +50,7 @@ c.define(A | B)
 c.show()
 ```
 
-[![Figure 3](img/README_fig3.png)](img/README_fig3.png)
+[![Figure 3](https://raw.githubusercontent.com/timdechant/desmospy/main/img/README_fig3.png)](https://raw.githubusercontent.com/timdechant/desmospy/main/img/README_fig3.png)
 
 We can also take the intersection of the same regions, with the logical AND <code>&</code> operation.
 
@@ -60,7 +60,7 @@ c.define(A & B)
 c.show()
 ```
 
-[![Figure 4](img/README_fig4.png)](img/README_fig4.png)
+[![Figure 4](https://raw.githubusercontent.com/timdechant/desmospy/main/img/README_fig4.png)](https://raw.githubusercontent.com/timdechant/desmospy/main/img/README_fig4.png)
 
 This leaves the logical XOR <code>^</code> operation.
 
@@ -70,4 +70,4 @@ c.define(A ^ B)
 c.show()
 ```
 
-[![Figure 5](img/README_fig5.png)](img/README_fig5.png)
+[![Figure 5](https://raw.githubusercontent.com/timdechant/desmospy/main/img/README_fig5.png)](https://raw.githubusercontent.com/timdechant/desmospy/main/img/README_fig5.png)
