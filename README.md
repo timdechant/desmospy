@@ -4,7 +4,7 @@
 
 
 
-<code>demospy</code> has these immediate goals:
+<code>desmospy</code> has these immediate goals:
   - present the Desmos API with consistent terminology
   - keep it simple, keep it pythonic
 
