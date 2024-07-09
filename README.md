@@ -21,7 +21,7 @@ c.show()
 
 [![Figure 1](https://raw.githubusercontent.com/timdechant/desmospy/main/img/README_fig1.png)](https://raw.githubusercontent.com/timdechant/desmospy/main/img/README_fig1.png)
 
-More advanced plots can be created with comparisons and the <code>.define()</code> method:
+More advanced plots can be created with comparisons and the <code>.set()</code> method:
 
 
 ```python
