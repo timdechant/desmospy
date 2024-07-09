@@ -1,14 +1,15 @@
 > [!NOTE]
 > 
 > [See a live view as a Jupyter notebook.](https://nbviewer.org/github/timdechant/desmospy/blob/main/README.ipynb)
-
-
+> 
+> [See source code and more examples on github.](https://github.com/timdechant/desmospy)
 
 <code>desmospy</code> has these immediate goals:
   - present the Desmos API with consistent terminology
   - keep it simple, keep it pythonic
 
 Basic usage is very simple.  Create an instance of <code>Calculator</code>, then assign to one of its members.
+
 
 ```python
 from desmospy import Calculator
@@ -22,13 +23,14 @@ c.show()
 
 More advanced plots can be created with comparisons and the <code>.define()</code> method:
 
+
 ```python
 c.a = 0.3
 a,x,y = c.a,c.x,c.y
 
-c.define(y < a*x)
-c.define(y >= a*x**2)
-c.define(a*x*y == 1)
+c.set(y < a*x)
+c.set(y >= a*x**2)
+c.set(a*x*y == 1)
 c.show()
 ```
 
@@ -46,7 +48,7 @@ We can then take the union, also known as a logical OR <code>|</code> of the reg
 
 
 ```python
-c.define(A | B)
+c.set(A | B)
 c.show()
 ```
 
@@ -56,7 +58,7 @@ We can also take the intersection of the same regions, with the logical AND <cod
 
 
 ```python
-c.define(A & B)
+c.set(A & B)
 c.show()
 ```
 
@@ -66,7 +68,7 @@ This leaves the logical XOR <code>^</code> operation.
 
 
 ```python
-c.define(A ^ B)
+c.set(A ^ B)
 c.show()
 ```
 
