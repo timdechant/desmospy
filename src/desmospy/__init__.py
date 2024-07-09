@@ -72,14 +72,14 @@ class Calculator(object):
         if name[:1] == '_':
             return object.__setattr__(self, name, value)
         lhs = self.__getattr__(name)
-        self.define(Equality(lhs, value))
+        self.set(Equality(lhs, value))
     
-    def define(self, expr):
+    def set(self, expr):
         self._statements.append(expr)
 
     def abs(self, expr):
         val = Statement()
-        val.sym = sympy.Abs(Statement.ref(expr))
+        val.expr = sympy.Abs(Statement.ref(expr))
         return val
 
     def point(self, *args):
@@ -99,103 +99,103 @@ class Statement(object):
     def __init__(self, value=None):
         if isinstance(value, str):
             self.name = value
-            self.sym = sympy.symbols(value)
+            self.expr = sympy.Symbol(value)
 
     @classmethod
     def from_value(cls, val):
         if isinstance(val, Statement):
             return val
         result = Statement()
-        result.sym = val
+        result.expr = val
         return result
     
     @staticmethod
     def ref(val):
         if isinstance(val, Statement):
-            return val.sym
+            return val.expr
         return val
     
     def __eq__(self, other):
-        return Equality(self.sym, Statement.ref(other))
+        return Equality(self.expr, Statement.ref(other))
 
     def __lt__(self, other):
-        return LessThan(self.sym, Statement.ref(other))
+        return LessThan(self.expr, Statement.ref(other))
     
     def __le__(self, other):
-        return LessEqual(self.sym, Statement.ref(other))
+        return LessEqual(self.expr, Statement.ref(other))
     
     def __gt__(self, other):
-        return GreaterThan(self.sym, Statement.ref(other))
+        return GreaterThan(self.expr, Statement.ref(other))
     
     def __ge__(self, other):
-        return GreaterEqual(self.sym, Statement.ref(other))
+        return GreaterEqual(self.expr, Statement.ref(other))
     
     def __req__(self, other):
-        return Equality(Statement.ref(other), self.sym)
+        return Equality(Statement.ref(other), self.expr)
 
     def __add__(self, other):
         result = Statement()
-        result.sym = self.sym + Statement.ref(other)
+        result.expr = self.expr + Statement.ref(other)
         return result
 
     def __radd__(self, other):
         result = Statement()
-        result.sym = Statement.ref(other) + self.sym
+        result.expr = Statement.ref(other) + self.expr
         return result
 
     def __sub__(self, other):
         result = Statement()
-        result.sym = self.sym - Statement.ref(other)
+        result.expr = self.expr - Statement.ref(other)
         return result
 
     def __rsub__(self, other):
         result = Statement()
-        result.sym = Statement.ref(other) - self.sym
+        result.expr = Statement.ref(other) - self.expr
         return result
 
     def __mul__(self, other):
         result = Statement()
-        result.sym = self.sym * Statement.ref(other)
+        result.expr = self.expr * Statement.ref(other)
         return result
 
     def __rmul__(self, other):
         result = Statement()
-        result.sym = Statement.ref(other) * self.sym
+        result.expr = Statement.ref(other) * self.expr
         return result
 
     def __truediv__(self, other):
         result = Statement()
-        result.sym = self.sym / Statement.ref(other)
+        result.expr = self.expr / Statement.ref(other)
         return result
 
     def __rtruediv__(self, other):
         result = Statement()
-        result.sym = Statement.ref(other) / self.sym
+        result.expr = Statement.ref(other) / self.expr
         return result
 
     def __pow__(self, other):
         result = Statement()
-        result.sym = self.sym ** Statement.ref(other)
+        result.expr = self.expr ** Statement.ref(other)
         return result
 
     def __rpow__(self, other):
         result = Statement()
-        result.sym = Statement.ref(other) ** self.sym
+        result.expr = Statement.ref(other) ** self.expr
         return result
 
     def __str__(self):
-        return sympy.latex(self.sym)
+        return sympy.latex(self.expr)
 
 class Inequality(object):
     def __init__(self, lhs, rhs):
         if isinstance(lhs, Statement):
-            lhs = lhs.sym
+            lhs = lhs.expr
         if isinstance(rhs, Statement):
-            rhs = rhs.sym
+            rhs = rhs.expr
         self.lhs,self.rhs = (lhs, rhs)
         
     def __str__(self):
-        return f'{sympy.latex(self.lhs)} {self.op} {sympy.latex(self.rhs)}'
+        return sympy.latex(self.op(self.lhs, self.rhs))
 
     def __and__(self, other):
         return Intersect().add(self).add(other)
@@ -221,57 +221,69 @@ class Inequality(object):
 class LessThan(Inequality):
     def __init__(self, lhs, rhs):
         super().__init__(lhs, rhs)
-        self.op = '\\lt'
+        self.op = sympy.Lt
         self.strict = True
 
+    def __invert__(self):
+        return GreaterEqual(self.lhs, self.rhs)
+    
     @property
     def lump(self):
-        """ Returns an expression that is >= zero iff the original indequality is True. """
-        return sympy.latex(self.rhs - self.lhs)
+        """ Returns a sympy expression that is >= zero iff the original inequality is True. """
+        return self.rhs - self.lhs
 
 class LessEqual(Inequality):
     def __init__(self, lhs, rhs):
         super().__init__(lhs, rhs)
-        self.op = '\\le'
+        self.op = sympy.Le
         self.strict = False
 
+    def __invert__(self):
+        return GreaterThan(self.lhs, self.rhs)
+    
     @property
     def lump(self):
-        """ Returns an expression that is > zero iff the original indequality is True. """
-        return sympy.latex(self.rhs - self.lhs)
+        """ Returns a sympy expression that is > zero iff the original inequality is True. """
+        return self.rhs - self.lhs
 
 class GreaterThan(Inequality):
     def __init__(self, lhs, rhs):
         super().__init__(lhs, rhs)
-        self.op = '\\gt'
+        self.op = sympy.Gt
         self.strict = True
 
+    def __invert__(self):
+        return LessEqual(self.lhs, self.rhs)
+    
     @property
     def lump(self):
-        """ Returns an expression that is > zero iff the original indequality is True. """
-        return sympy.latex(self.lhs - self.rhs)
+        """ Returns a sympy expression that is > zero iff the original inequality is True. """
+        return self.lhs - self.rhs
 
 class GreaterEqual(Inequality):
     def __init__(self, lhs, rhs):
         super().__init__(lhs, rhs)
-        self.op = '\\ge'
+        self.op = sympy.Ge
         self.strict = False
 
+    def __invert__(self):
+        return LessThan(self.lhs, self.rhs)
+    
     @property
     def lump(self):
-        """ Returns an expression that is >= zero iff the original indequality is True. """
-        return sympy.latex(self.lhs - self.rhs)
+        """ Returns a sympy expression that is >= zero iff the original inequality is True. """
+        return self.lhs - self.rhs
 
 class Equality(object):
     def __init__(self, lhs, rhs):
         if isinstance(lhs, Statement):
-            lhs = lhs.sym
+            lhs = lhs.expr
         if isinstance(rhs, Statement):
-            rhs = rhs.sym
-        self.sym = sympy.Eq(lhs, rhs)
+            rhs = rhs.expr
+        self.expr = sympy.Eq(lhs, rhs)
 
     def __str__(self):
-        return sympy.latex(self.sym)
+        return sympy.latex(self.expr)
 
 class Boolean(object):
     def __init__(self):
@@ -291,32 +303,31 @@ class Boolean(object):
             self.components.append(component.lump)
         return self
     def __str__(self):
-        op = '\\gt' if self.strict else '\\ge'
-        return f'{self.lump} {op} 0'
+        op = sympy.Gt if self.strict else sympy.Ge
+        result = op(self.lump, 0)
+        result = sympy.simplify(result)
+        return sympy.latex(result)
 
 class Intersect(Boolean):
     def __and__(self, other):
         return self.add(other)
     @property
     def lump(self):
-        comps = ', '.join(str(c) for c in self.components)
-        return f'min({comps})'
+        return sympy.Min(*self.components)
 
 class Union(Boolean):
     def __or__(self, other):
         return self.add(other)
     @property
     def lump(self):
-        comps = ', '.join(str(c) for c in self.components)
-        return f'max({comps})'
+        return sympy.Max(*self.components)
 
 class XOR(Boolean):
     def __xor__(self, other):
         return self.add(other)
     @property
     def lump(self):
-        comps = '*'.join(f'({c})' for c in self.components)
-        return f'-{comps}'
+        return -sympy.Mul(*self.components)
 
 html_fmt = lambda url,exp,opt: """
 <body style="background-color:#2A2A2A;" marginwidth="0px" marginheight="0px">

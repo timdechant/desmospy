@@ -1,6 +1,6 @@
 [project]
 name = "desmospy"
-version = "0.0.1"
+version = "0.0.3"
 authors = [
   { name="Tim DeChant", email="145816069+timdechant@users.noreply.github.com" },
 ]
@@ -12,7 +12,9 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-
+dependencies = [
+  'sympy >= 1.8',
+]
 [project.urls]
 Homepage = "https://github.com/timdechant/desmospy"
 Issues = "https://github.com/timdechant/desmospy/issues"
