@@ -7,19 +7,21 @@ import sympy
 import base64
 
 class Calculator(object):
-    def __init__(self, width=720, height=360, **kwargs):
+    def __init__(self, size=None, **kwargs):
         """
         Arguments:
-            width - pixel width of iframe
-            height - pixel height of iframe
+            size - iframe dimensions as tuple (width,height)
             url - location of Desmos library
             url_fmt - location of Desmos library, parameterized with {"rev", "key"}
             key - Desmos key
             rev - Version of Desmos library
             **others - remaining kwargs are forwarded to Desmos as API options (see https://www.desmos.com/api/v1.9/docs/index.html)
         """
-        self._width = width
-        self._height = height
+        if size:
+            self._width,self._height = size
+        else:
+            self._width = 1080
+            self._height = 360
 
         kwargs,self._url = self.url_from_kwargs(**kwargs)
 
@@ -27,9 +29,17 @@ class Calculator(object):
         ## kwargs.setdefault('expressionsCollapsed', True)
         self._options = json.dumps(kwargs)
 
-        self._cache = dict([(var,Statement(var)) for var in ('x','y','r','theta','pi','e')])
+        self._cache = dict([(var,sympy.Symbol(var)) for var in ('x','y','r','theta')])
+        self._customs = {}
+        for var in ('pi','e'):
+            sub = 'desmospyCustom'+var
+            self._cache[var] = sympy.Symbol(sub)
+            self._customs[sub] = sympy.latex(sympy.Symbol(var)).replace('\\',r'\\')
+        self.clear()
+
+    def clear(self):
         self._statements = []
-        self._substitutions = {}
+        self._substitutions = dict(self._customs)
 
     def url_from_kwargs(self, **kwargs):
         url = kwargs.pop('url', None)
@@ -48,25 +58,67 @@ class Calculator(object):
             expr = expr.replace(key, sub)
         return html_fmt(self._url, expr, self._options)
     
-    def save(self, filename):
+    def save(self, filename, clear=True):
         with open(filename, 'w') as f:
             f.write(self.html)
+        if clear:
+            self.clear()
     
     def show(self, clear=True):
         data = base64.b64encode(self.html.encode('utf-8')).decode('utf-8')
         url = f'data:text/html;base64,{data}'
         display(IFrame(url, width=self._width, height=self._height))
         if clear:
-            self._statements = []
-            self._substitutions = {}
+            self.clear()
 
+    def func_indirect(self, f):
+        def indirect(*args):
+            result = f(*(str(Statement.ref(arg)) for arg in args))
+            return Statement.from_value(result)
+        return indirect
+    
+    def function(self, f, name=None):
+        import inspect
+        argspec = inspect.getfullargspec(f)
+        if name is None:
+            name = f.__name__
+        if name == '<lambda>':
+            raise ValueError(f'invalid function name "{name}"')
+        desmos_name = name
+        if len(name.split('_')[0]) > 1:
+            desmos_name = 'f_'+name
+        args = argspec.args
+        # attrs = tuple(self.__getattr__(a) for a in args)
+        attrs = tuple(Statement(a) for a in args)
+        
+        if argspec.defaults:
+            split = -len(argspec.defaults)
+            for arg,val in zip(args[split:], argspec.defaults):
+                self.__setattr__(arg, val)
+            args = args[:split]
+
+        expr = f(*attrs)
+        if isinstance(expr, Boolean) or isinstance(expr, Inequality):
+            expr = expr.lump
+            
+        fn = sympy.Function(sympy.Symbol(desmos_name))
+        decorated = self.func_indirect(fn)
+        self.set(Equality(decorated(*args), expr))
+
+        self._cache[name] = decorated
+        return decorated
+       
+    
     def __getattr__(self, name):
         try:
             return self._cache[name]
         except:
-            statement = Statement(name)
-            self._cache[name] = statement
-            return statement
+            try:
+                return sympy.__getattribute__(name)
+            except:
+                statement = Statement(name)
+                self._cache[name] = statement
+                return statement
 
     def __setattr__(self, name, value):
         if name[:1] == '_':
@@ -75,6 +127,8 @@ class Calculator(object):
         self.set(Equality(lhs, value))
     
     def set(self, expr):
+        if isinstance(expr, Statement):
+            expr = expr >= 0
         self._statements.append(expr)
 
     def abs(self, expr):
@@ -114,7 +168,7 @@ class Statement(object):
         if isinstance(val, Statement):
             return val.expr
         return val
-    
+
     def __eq__(self, other):
         return Equality(self.expr, Statement.ref(other))
 
@@ -132,6 +186,11 @@ class Statement(object):
     
     def __req__(self, other):
         return Equality(Statement.ref(other), self.expr)
+
+    def __neg__(self):
+        result = Statement()
+        result.expr = -self.expr
+        return result
 
     def __add__(self, other):
         result = Statement()
@@ -183,6 +242,21 @@ class Statement(object):
         result.expr = Statement.ref(other) ** self.expr
         return result
 
+    def __and__(self, other):
+        return (self >= 0) & other
+    def __rand__(self, other):
+        return other & (self >= 0)
+
+    def __or__(self, other):
+        return (self >= 0) | other
+    def __ror__(self, other):
+        return other | (self >= 0)
+
+    def __xor__(self, other):
+        return (self >= 0) ^ other
+    def __rxor__(self, other):
+        return other ^ (self >= 0)
+        
     def __str__(self):
         return sympy.latex(self.expr)
 
@@ -299,6 +373,8 @@ class Boolean(object):
             self.strict = component.strict
         if isinstance(component, self.__class__):
             self.components += component.components
+        elif isinstance(component, Statement):
+            self.components.append(component.expr)
         else:
             self.components.append(component.lump)
         return self
