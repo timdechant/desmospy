@@ -1,0 +1,38 @@
+
+<body style="background-color:#2A2A2A;" marginwidth="0px" marginheight="0px">
+<script src="https://www.desmos.com/api/v1.9/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6"></script>
+<div id="calculator"></div>
+<script>
+	var elt = document.getElementById("calculator");
+	var calculator = Desmos.GraphingCalculator(elt, options={"showGrid": false, "showXAxis": false, "showYAxis": false});
+	calculator.setExpression({
+		latex: 'f_{circle}{\\left(x,y,r \\right)} = r^{2} - x^{2} - y^{2}',
+		id: '0',
+	});
+
+calculator.setExpression({
+		latex: 'a = 6.1',
+		id: '1',
+	});
+
+calculator.setExpression({
+		latex: 'r_{0} = 5.6',
+		id: '2',
+	});
+
+calculator.setExpression({
+		latex: 'f_{combo}{\\left(x,y \\right)} = - f_{circle}{\\left(- a + x,y,r_{0} \\right)} f_{circle}{\\left(- a \\cos{\\left(\\frac{\\pi}{8} \\right)} + x,- a \\sin{\\left(\\frac{\\pi}{8} \\right)} + y,r_{0} \\right)} f_{circle}{\\left(- a \\cos{\\left(\\frac{\\pi}{4} \\right)} + x,- a \\sin{\\left(\\frac{\\pi}{4} \\right)} + y,r_{0} \\right)} f_{circle}{\\left(- a \\cos{\\left(\\frac{3 \\pi}{8} \\right)} + x,- a \\sin{\\left(\\frac{3 \\pi}{8} \\right)} + y,r_{0} \\right)} f_{circle}{\\left(- a \\cos{\\left(\\frac{\\pi}{2} \\right)} + x,- a \\sin{\\left(\\frac{\\pi}{2} \\right)} + y,r_{0} \\right)} f_{circle}{\\left(- a \\cos{\\left(\\frac{5 \\pi}{8} \\right)} + x,- a \\sin{\\left(\\frac{5 \\pi}{8} \\right)} + y,r_{0} \\right)} f_{circle}{\\left(- a \\cos{\\left(\\frac{3 \\pi}{4} \\right)} + x,- a \\sin{\\left(\\frac{3 \\pi}{4} \\right)} + y,r_{0} \\right)} f_{circle}{\\left(- a \\cos{\\left(\\frac{7 \\pi}{8} \\right)} + x,- a \\sin{\\left(\\frac{7 \\pi}{8} \\right)} + y,r_{0} \\right)} f_{circle}{\\left(- a \\cos{\\left(\\pi \\right)} + x,- a \\sin{\\left(\\pi \\right)} + y,r_{0} \\right)} f_{circle}{\\left(- a \\cos{\\left(\\frac{9 \\pi}{8} \\right)} + x,- a \\sin{\\left(\\frac{9 \\pi}{8} \\right)} + y,r_{0} \\right)} f_{circle}{\\left(- a \\cos{\\left(\\frac{5 \\pi}{4} \\right)} + x,- a \\sin{\\left(\\frac{5 \\pi}{4} \\right)} + y,r_{0} \\right)} f_{circle}{\\left(- a \\cos{\\left(\\frac{11 \\pi}{8} \\right)} + x,- a \\sin{\\left(\\frac{11 \\pi}{8} \\right)} + y,r_{0} \\right)} f_{circle}{\\left(- a \\cos{\\left(\\frac{3 \\pi}{2} \\right)} + x,- a \\sin{\\left(\\frac{3 \\pi}{2} \\right)} + y,r_{0} \\right)} f_{circle}{\\left(- a \\cos{\\left(\\frac{13 \\pi}{8} \\right)} + x,- a \\sin{\\left(\\frac{13 \\pi}{8} \\right)} + y,r_{0} \\right)} f_{circle}{\\left(- a \\cos{\\left(\\frac{7 \\pi}{4} \\right)} + x,- a \\sin{\\left(\\frac{7 \\pi}{4} \\right)} + y,r_{0} \\right)} f_{circle}{\\left(- a \\cos{\\left(\\frac{15 \\pi}{8} \\right)} + x,- a \\sin{\\left(\\frac{15 \\pi}{8} \\right)} + y,r_{0} \\right)}',
+		id: '3',
+	});
+
+calculator.setExpression({
+		latex: 'f_{combo}{\\left(x,y \\right)} \\geq 0',
+		id: '4',
+	});
+
+calculator.setExpression({
+		latex: 'f_{combo}{\\left(x,y \\right)} \\geq \\left(a + r_{0}\\right)^{23}',
+		id: '5',
+	});
+
+</script>
