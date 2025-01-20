@@ -65,8 +65,13 @@ class ExpressionCollection(object):
             return object.__setattr__(self, name, value)
         lhs = self.__getattr__(name)
         self.set(Equality(lhs, value))
+
+    def activate(self):
+        "Make sure this object is active before adding children."
+        pass
     
     def set(self, expr):
+        self.activate()
         if isinstance(expr, Statement):
             expr = expr >= 0
         self._children.append(expr)
@@ -118,11 +123,14 @@ class Calculator(ExpressionCollection):
             sub = 'desmospyCustom'+var
             self._root._cache[var] = sympy.Symbol(sub)
             self._customs[sub] = sympy.latex(sympy.Symbol(var)).replace('\\',r'\\')
-        self.clear()
+        self.clear(init=True)
 
-    def clear(self):
+    def clear(self, init=False):
         self._next_id = 0
         self._obj_ids = {}
+        if not init:
+            for folder in self._folders:
+                folder.clear()            
         self._folders = []
         self._children = []
         self._substitutions = dict(self._customs)
@@ -141,6 +149,11 @@ class Calculator(ExpressionCollection):
         self._children.append(folder)
         self._folders.append(folder)
         return folder
+
+    def activateFolder(self, folder):
+        if folder not in self._folders:
+            self._children.append(folder)
+            self._folders.append(folder)            
 
     def get_id(self, obj):
         """
@@ -182,8 +195,14 @@ class Folder(ExpressionCollection):
         self._root = parent
         self._parent = parent
         self._name = name
+        self.clear()
+
+    def clear(self):
         self._children = []
         self._child_ids = None
+
+    def activate(self):
+        self._parent.activateFolder(self)
 
     @property
     def html(self):
@@ -460,6 +479,11 @@ class XOR(Boolean):
 
 html_fmt = lambda url,exp,opt,tree: """
 <body style="background-color:#2A2A2A;" marginwidth="0px" marginheight="0px">
+<style>
+.dcg-smart-textarea-container {
+    min-height: 24;
+}
+</style>
 <script src="%(url)s"></script>
 <div id="calculator"></div>
 <script>
@@ -472,6 +496,8 @@ html_fmt = lambda url,exp,opt,tree: """
   folders = %(folders)s;
   for (folder in folders) {
     expr[folder].type = 'folder';
+    expr[folder].title = expr[folder].text;
+    expr[folder].collapsed = true;
     for (member of folders[folder]) {
       expr[member].folderId = expr[folder].id;
     }
