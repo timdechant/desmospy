@@ -64,6 +64,8 @@ class ExpressionCollection(object):
         if name[:1] == '_':
             return object.__setattr__(self, name, value)
         lhs = self.__getattr__(name)
+        if '__iter__' in dir(value):
+            value = self.list(value)
         self.set(Equality(lhs, value))
 
     def activate(self):
@@ -96,6 +98,17 @@ class ExpressionCollection(object):
         coords = f'({", ".join(coords)})'
 
         return self.substitute(coords)
+    
+    def list(self, values, *args, **kwargs):
+        """
+        Capture a list of values
+            - sympy formats arrays as a matrix; we'll need to format manually
+            - substitute a custom variable in the sympy expression, then replace this later with the latex string of the point
+        """
+        values = [ sympy.latex(Statement.ref(expr)).replace('\\',r'\\') for expr in values ]
+        values = f'[{", ".join(values)}]'
+
+        return self.substitute(values)
     
     def range(self, *args):
         """
@@ -240,8 +253,8 @@ class Expression(object):
 class Statement(Expression):
     def __init__(self, value=None):
         if isinstance(value, str):
-            self.name = value
-            self.expr = sympy.Symbol(value)
+            value = sympy.Symbol(value)
+        self.expr = value
 
     @classmethod
     def from_value(cls, val):
