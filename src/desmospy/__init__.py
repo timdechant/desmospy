@@ -81,6 +81,11 @@ class ExpressionCollection(object):
         val.expr = sympy.Abs(Statement.ref(expr))
         return val
 
+    def substitute(self, value):
+        var = 'v_{custom%04d}'%len(self._root._substitutions)
+        self._root._substitutions[var] = value
+        return Statement(var)
+    
     def point(self, *args):
         """
         Capture a point expression
@@ -89,9 +94,20 @@ class ExpressionCollection(object):
         """
         coords = [ sympy.latex(Statement.ref(expr)).replace('\\',r'\\') for expr in args ]
         coords = f'({", ".join(coords)})'
-        var = 'v_{custom%04d}'%len(self._root._substitutions)
-        self._root._substitutions[var] = coords
-        return Statement(var)
+
+        return self.substitute(coords)
+    
+    def range(self, *args):
+        """
+        Convert a range from native python to native desmos
+            - substitute a custom variable in the sympy expression, then replace this later with the latex string of the point
+        """
+        bounds = list(args)
+        bounds[-1] -= 1 # python is exclusive, desmos is inclusive
+        bounds = [ sympy.latex(Statement.ref(expr)).replace('\\',r'\\') for expr in bounds ]
+        bounds = f'[{0 if len(bounds) < 2 else bounds[0]}...{bounds[-1]}]'
+
+        return self.substitute(bounds)
 
 class Calculator(ExpressionCollection):
     def __init__(self, size=None, **kwargs):
