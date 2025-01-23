@@ -15,22 +15,9 @@ class ExpressionCollection(object):
             if 'config' in dir(child):
                 child.config(**kwargs)
     
-    def func_indirect(self, f):
-        def indirect(*args):
-            result = f(*(str(Statement.ref(arg)) for arg in args))
-            return Statement.from_value(result)
-        return indirect
-    
     def function(self, f, name=None):
         import inspect
         argspec = inspect.getfullargspec(f)
-        if name is None:
-            name = f.__name__
-        if name == '<lambda>':
-            raise ValueError(f'invalid function name "{name}"')
-        desmos_name = name
-        if len(name.split('_')[0]) > 1:
-            desmos_name = 'f_'+name
         args = argspec.args
         # attrs = tuple(self.__getattr__(a) for a in args)
         attrs = tuple(Statement(a) for a in args)
@@ -44,14 +31,18 @@ class ExpressionCollection(object):
         expr = f(*attrs)
         if isinstance(expr, Boolean) or isinstance(expr, Inequality):
             expr = expr.lump
-            
-        fn = sympy.Function(sympy.Symbol(desmos_name))
-        decorated = self.func_indirect(fn)
-        self.set(Equality(decorated(*args), expr))
 
-        self._root._cache[name] = decorated
-        return decorated
-    
+        if name is None:
+            name = f.__name__
+        fn = Function(name)
+        self._root._cache[name] = fn
+
+        expr = Equality(fn(*args), expr)
+        self.set(expr)
+        
+        fn.config = expr.config
+        return fn
+
     def __getattr__(self, name):
         try:
             return self._root._cache[name]
@@ -379,6 +370,21 @@ class Statement(Expression):
         
     def __str__(self):
         return sympy.latex(self.expr)
+
+class Function(Statement):
+    def __init__(self, name):
+        if any(symbol in name for symbol in '<>'):
+            raise ValueError(f'invalid function name "{name}"')
+        desmos_name = name
+        if len(name.split('_')[0]) > 1:
+            desmos_name = 'f_'+name
+
+        self.expr = sympy.Symbol(desmos_name)
+        self._fn = sympy.Function(self.expr)
+        
+    def __call__(self, *args):
+        result = self._fn(*(str(Statement.ref(arg)) for arg in args))
+        return Statement.from_value(result)
 
 class Inequality(Expression):
     def __init__(self, lhs, rhs):
