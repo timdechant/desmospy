@@ -64,7 +64,9 @@ class ExpressionCollection(object):
         if name[:1] == '_':
             return object.__setattr__(self, name, value)
         lhs = self.__getattr__(name)
-        if '__iter__' in dir(value):
+        if isinstance(value, tuple) and len(value) == 2:
+            value = self.point(*value)
+        elif '__iter__' in dir(value):
             value = self.list(value)
         self.set(Equality(lhs, value))
 
@@ -77,6 +79,7 @@ class ExpressionCollection(object):
         if isinstance(expr, Statement):
             expr = expr >= 0
         self._children.append(expr)
+        return expr
 
     def abs(self, expr):
         val = Statement()
@@ -103,7 +106,7 @@ class ExpressionCollection(object):
         """
         Capture a list of values
             - sympy formats arrays as a matrix; we'll need to format manually
-            - substitute a custom variable in the sympy expression, then replace this later with the latex string of the point
+            - substitute a custom variable in the sympy expression, then replace this later with the latex string of the list
         """
         values = [ sympy.latex(Statement.ref(expr)).replace('\\',r'\\') for expr in values ]
         values = f'[{", ".join(values)}]'
@@ -113,7 +116,7 @@ class ExpressionCollection(object):
     def range(self, *args):
         """
         Convert a range from native python to native desmos
-            - substitute a custom variable in the sympy expression, then replace this later with the latex string of the point
+            - substitute a custom variable in the sympy expression, then replace this later with the latex string of the range
         """
         bounds = list(args)
         bounds[-1] -= 1 # python is exclusive, desmos is inclusive
