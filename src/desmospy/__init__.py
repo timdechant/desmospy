@@ -10,6 +10,11 @@ class ExpressionCollection(object):
     def get_id(self, obj):
         return self._root.get_id(obj)
     
+    def config(self, **kwargs):
+        for child in self._children:
+            if 'config' in dir(child):
+                child.config(**kwargs)
+    
     def func_indirect(self, f):
         def indirect(*args):
             result = f(*(str(Statement.ref(arg)) for arg in args))
@@ -74,10 +79,12 @@ class ExpressionCollection(object):
         "Make sure this object is active before adding children."
         pass
     
-    def set(self, expr):
+    def set(self, expr, **kwargs):
         self.activate()
         if isinstance(expr, Statement):
             expr = expr >= 0
+        if kwargs:
+            expr.config(**kwargs)
         self._children.append(expr)
         return expr
 
@@ -149,7 +156,7 @@ class Calculator(ExpressionCollection):
         self._options = json.dumps(kwargs)
 
         self._root = self
-        self._cache = dict([(var,sympy.Symbol(var)) for var in ('x','y','r','theta')])
+        self._cache = dict([(var,Statement(var)) for var in ('x','y','r','theta')])
         self._customs = {}
         for var in ('pi','e'):
             sub = 'desmospyCustom'+var
@@ -249,9 +256,18 @@ class Folder(ExpressionCollection):
         return self._child_ids
 
 class Expression(object):
+    def config(self, **kwargs):
+        try:
+            self.state.update(kwargs)
+        except:
+            self.state = kwargs
+        
     @property
     def html(self):
-        return 'calculator.setExpression({latex: %(exp)s});'%{'exp':repr(str(self))}
+        expr = {'latex': str(self)}
+        if 'state' in dir(self):
+            expr.update(self.state)
+        return f'calculator.setExpression({json.dumps(expr)});'
 
 class Statement(Expression):
     def __init__(self, value=None):
@@ -367,6 +383,7 @@ class Statement(Expression):
 class Inequality(Expression):
     def __init__(self, lhs, rhs):
         if isinstance(lhs, Statement):
+            lhs.config = self.config
             lhs = lhs.expr
         if isinstance(rhs, Statement):
             rhs = rhs.expr
@@ -455,6 +472,7 @@ class GreaterEqual(Inequality):
 class Equality(Expression):
     def __init__(self, lhs, rhs):
         if isinstance(lhs, Statement):
+            lhs.config = self.config
             lhs = lhs.expr
         if isinstance(rhs, Statement):
             rhs = rhs.expr
