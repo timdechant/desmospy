@@ -84,6 +84,18 @@ class ExpressionCollection(object):
         val.expr = sympy.Abs(Statement.ref(expr))
         return val
 
+    def sum(self, function, **kwargs):
+        # pop other kwargs, if any
+        if len(kwargs) > 1:
+            raise ValueError(f'sum() received unknown arguments: {kwargs}')
+        for key,val in kwargs.items():
+            index = key
+            lower,upper = val
+        # index = sympy.symbols(index, cls=sympy.Idx)
+        index = sympy.Symbol(index)
+        expr = function(index)
+        return Statement(sympy.Sum(Statement.ref(expr), (index,lower,upper)))
+
     def substitute(self, value):
         var = 'v_{custom%04d}'%len(self._root._substitutions)
         self._root._substitutions[var] = value
@@ -280,6 +292,9 @@ class Statement(Expression):
             return val.expr
         return val
 
+    def __getitem__(self, index):
+        return Indexed(self, index)
+    
     def __eq__(self, other):
         return Equality(self.expr, Statement.ref(other))
 
@@ -370,6 +385,12 @@ class Statement(Expression):
         
     def __str__(self):
         return sympy.latex(self.expr)
+
+class Indexed(Statement):
+    def __init__(self, base, *index):
+        base = str(base)
+        index = ','.join(str(i) for i in index)
+        self.expr = sympy.symbols(f'{base}[{index}]')
 
 class Function(Statement):
     def __init__(self, name):
