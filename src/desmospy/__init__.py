@@ -43,27 +43,51 @@ class ExpressionCollection(object):
         fn.config = expr.config
         return fn
 
+    _desmos_fns = {
+        'asin': '\\\\sin^{-1}',
+        'acos': '\\\\cos^{-1}',
+        'atan': '\\\\tan^{-1}',
+        'atan2': '\\\\tan^{-1}',
+        'arcsin': '\\\\sin^{-1}',
+        'arccos': '\\\\cos^{-1}',
+        'arctan': '\\\\tan^{-1}',
+        'arctan2': '\\\\tan^{-1}',
+    }
+    
     def __getattr__(self, name):
-        try:
-            return self._root._cache[name]
-        except KeyError:
+        statement = self._root._cache.get(name, None)
+        if statement is not None:
+            return statement
+
+        if name in self._desmos_fns:
+            statement = self.substitute(self._desmos_fns[name], cls=Function)
+        else:
             try:
-                return sympy.__getattribute__(name)
+                attr = sympy.__getattribute__(name)
+                if not isinstance(attr, sympy.core.function.FunctionClass):
+                    return attr
+                statement = NativeFunction(attr)
             except AttributeError as e:
-                if "module 'sympy' has no attribute" in str(e):
-                    statement = Statement(name)
-                    self._root._cache[name] = statement
-                    return statement
-                raise
+                if "module 'sympy' has no attribute" not in str(e):
+                    raise
+                statement = Statement(name)
+        self._root._cache[name] = statement
+        return statement
 
     def __setattr__(self, name, value):
         if name[:1] == '_':
             return object.__setattr__(self, name, value)
-        lhs = self.__getattr__(name)
         if isinstance(value, tuple) and len(value) == 2:
             value = self.point(*value)
         elif '__iter__' in dir(value):
             value = self.list(value)
+
+        if isinstance(value, IndexedBaseValue):
+            lhs = IndexedBase(name)
+            self._root._cache[name] = lhs
+        else:
+            lhs = self.__getattr__(name)
+
         self.set(Equality(lhs, value))
 
     def activate(self):
@@ -93,13 +117,17 @@ class ExpressionCollection(object):
             lower,upper = val
         # index = sympy.symbols(index, cls=sympy.Idx)
         index = sympy.Symbol(index)
-        expr = function(index)
-        return Statement(sympy.Sum(Statement.ref(expr), (index,lower,upper)))
+        expr = Statement.ref(function(index))
+        lower = Statement.ref(lower)
+        upper = Statement.ref(upper)
+        return Statement(sympy.Sum(expr, (index,lower,upper)))
 
-    def substitute(self, value):
+    def substitute(self, value, cls=None):
+        if cls is None:
+            cls = Statement
         var = 'v_{custom%04d}'%len(self._root._substitutions)
         self._root._substitutions[var] = value
-        return Statement(var)
+        return cls(var)
     
     def point(self, *args):
         """
@@ -110,7 +138,7 @@ class ExpressionCollection(object):
         coords = [ sympy.latex(Statement.ref(expr)).replace('\\',r'\\') for expr in args ]
         coords = f'({", ".join(coords)})'
 
-        return self.substitute(coords)
+        return self.substitute(coords, cls=IndexedBaseValue)
     
     def list(self, values, *args, **kwargs):
         """
@@ -121,7 +149,7 @@ class ExpressionCollection(object):
         values = [ sympy.latex(Statement.ref(expr)).replace('\\',r'\\') for expr in values ]
         values = f'[{", ".join(values)}]'
 
-        return self.substitute(values)
+        return self.substitute(values, cls=IndexedBaseValue)
     
     def range(self, *args):
         """
@@ -133,7 +161,7 @@ class ExpressionCollection(object):
         bounds = [ sympy.latex(Statement.ref(expr)).replace('\\',r'\\') for expr in bounds ]
         bounds = f'[{0 if len(bounds) < 2 else bounds[0]}...{bounds[-1]}]'
 
-        return self.substitute(bounds)
+        return self.substitute(bounds, cls=IndexedBaseValue)
 
 class Calculator(ExpressionCollection):
     def __init__(self, size=None, **kwargs):
@@ -160,11 +188,10 @@ class Calculator(ExpressionCollection):
 
         self._root = self
         self._cache = dict([(var,Statement(var)) for var in ('x','y','r','theta')])
-        self._customs = {}
+        self._substitutions = {}
         for var in ('pi','e'):
-            sub = 'desmospyCustom'+var
-            self._root._cache[var] = sympy.Symbol(sub)
-            self._customs[sub] = sympy.latex(sympy.Symbol(var)).replace('\\',r'\\')
+            self.substitute(var)
+        self._customs = dict(self._substitutions)
         self.clear(init=True)
 
     def clear(self, init=False):
@@ -173,9 +200,9 @@ class Calculator(ExpressionCollection):
         if not init:
             for folder in self._folders:
                 folder.clear()            
+            self._substitutions = dict(self._customs)
         self._folders = []
         self._children = []
-        self._substitutions = dict(self._customs)
 
     def url_from_kwargs(self, **kwargs):
         url = kwargs.pop('url', None)
@@ -292,9 +319,6 @@ class Statement(Expression):
             return val.expr
         return val
 
-    def __getitem__(self, index):
-        return Indexed(self, index)
-    
     def __eq__(self, other):
         return Equality(self.expr, Statement.ref(other))
 
@@ -384,13 +408,29 @@ class Statement(Expression):
         return other ^ (self >= 0)
         
     def __str__(self):
-        return sympy.latex(self.expr)
+        return str(self.expr)
 
-class Indexed(Statement):
-    def __init__(self, base, *index):
-        base = str(base)
-        index = ','.join(str(i) for i in index)
-        self.expr = sympy.symbols(f'{base}[{index}]')
+class IndexedBase(Statement):
+    def __init__(self, base):
+        self.expr = sympy.IndexedBase(str(base))
+
+    class Indexed(sympy.Indexed):
+        def _latex(self, printer):
+            tex_base = printer._print(self.base)
+            tex = '{'+tex_base+'}'+'[%s]' % ','.join(
+                (printer._print(i+1) for i in self.indices))
+            return tex
+            
+    def __getitem__(self, index):
+        val = Statement()
+        val.expr = self.Indexed(self.expr, index)
+        return val
+
+class IndexedBaseValue(Statement):
+    """
+    Used to detect when an assignment should create an IndexedBase class.
+    """
+    pass
 
 class Function(Statement):
     def __init__(self, name):
@@ -404,8 +444,17 @@ class Function(Statement):
         self._fn = sympy.Function(self.expr)
         
     def __call__(self, *args):
-        result = self._fn(*(str(Statement.ref(arg)) for arg in args))
+        result = self._fn(*(Statement.ref(arg) for arg in args))
         return Statement.from_value(result)
+
+class NativeFunction(Function):
+    """
+    A native function is a sympy function that has the same name in Desmos.
+    This allows sympy to do simplification where possible,
+    **assuming** that Desmos will be able to interpret the result.
+    """
+    def __init__(self, fn):
+        self.expr = self._fn = fn
 
 class Inequality(Expression):
     def __init__(self, lhs, rhs):
