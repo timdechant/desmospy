@@ -193,6 +193,7 @@ class Calculator(ExpressionCollection):
             self.substitute(var)
         self._customs = dict(self._substitutions)
         self.clear(init=True)
+        self._bounds = None
 
     def clear(self, init=False):
         self._next_id = 0
@@ -233,6 +234,9 @@ class Calculator(ExpressionCollection):
             self._obj_ids[obj] = self._next_id
             self._next_id += 1
         return self._obj_ids[obj]
+
+    def bounds(self, left=0, right=0, bottom=10, top=10):
+        self._bounds = (left, right, bottom, top)
     
     @property
     def html(self):
@@ -244,7 +248,11 @@ class Calculator(ExpressionCollection):
         for key,sub in self._root._substitutions.items():
             html = html.replace(key, sub)
         tree = dict((self.get_id(f),f.child_ids) for f in self._folders)
-        return html_fmt(self._url, html, self._options, tree)
+        config = []
+        if self._bounds:
+            config += ['calculator.setMathBounds({left: %d, right: %d, bottom: %d, top: %d});'%self._bounds]
+        config = '\n    '.join(config)
+        return html_fmt(self._url, html, self._options, tree, config)
     
     def save(self, filename, clear=True):
         with open(filename, 'w') as f:
@@ -617,7 +625,7 @@ class XOR(Boolean):
     def lump(self):
         return -sympy.Mul(*self.components)
 
-html_fmt = lambda url,exp,opt,tree: """
+html_fmt = lambda url,exp,opt,tree,config: """
 <body style="background-color:#2A2A2A;" marginwidth="0px" marginheight="0px">
 <style>
 .dcg-smart-textarea-container {
@@ -643,5 +651,6 @@ html_fmt = lambda url,exp,opt,tree: """
     }
   }
   calculator.setState(state);
+  %(config)s
 </script>
-"""%{'url':url, 'expressions':exp, 'options':opt, 'folders':tree}
+"""%{'url':url, 'expressions':exp, 'options':opt, 'folders':tree, 'config':config}
