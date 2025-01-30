@@ -1,0 +1,119 @@
+!pip install 'desmospy>=0.0.5'
+> [!NOTE]
+>
+> [Jump straight the output *here*.](https://nbviewer.org/github/timdechant/desmospy/blob/main/examples/fourier-script-ohio/fourier-script-ohio.htm)
+>
+> [See a live view as a Jupyter notebook.](https://nbviewer.org/github/timdechant/desmospy/blob/main/examples/fourier-script-ohio/fourier-script-ohio.ipynb)
+> 
+> [See source code and more examples on github.](https://github.com/timdechant/desmospy)
+
+# Python and Desmos
+
+Python processing with Desmos interaction!  This shows the power of combining the two.
+
+## Getting Started
+
+Import the Calculator class from <code>desmospy</code> and create an instance.
+
+<code>Calculator</code> takes one custom argument <code>size</code> to control the frame view; all other arguments are forwarded to the [Desmos API](https://www.desmos.com/api/v1.9/docs/index.html#document-calculator).
+
+
+```python
+from desmospy import Calculator
+import numpy as np
+
+calc = Calculator(size=(1200,600), showGrid=False, showXAxis=False, showYAxis=False)
+```
+
+Everything you need from desmospy is available using that <code>calc</code> object!
+
+## Python Processing
+
+We start by pulling in a CSV file containing a series of points.  This is then transformed into the frequency domain using a Fast Fourier Transform (FFT).
+
+
+```python
+j=(0+1j)
+
+ohio = np.loadtxt('script-ohio_marching.csv', skiprows=1, delimiter=",", dtype=float)
+
+fft = np.fft.fft(ohio[:,0] + j*ohio[:,1])
+fft = np.fft.fftshift(fft)
+
+n = fft.shape[0]
+mag = np.abs(fft/n)
+phase = np.angle(fft) / (2*np.pi)
+
+fmax = (n-1)//2
+freq = range(-fmax,fmax+1)
+
+components = list(zip(freq,mag,phase))
+components.sort(key=lambda fmp: abs(fmp[0]))
+```
+
+## Desmos Expressions
+
+FFT converts the time-domain (or in our case, the 2D space domain) points into frequency components.
+
+Each frequency component is define by three values: magnitude $m_i$, frequency $f_i$, and starting phase/angle $p_i$.
+
+We will load these values into Desmos, then algebraically calculate the Inverse Fourier Transform:
+
+$$
+f(t) = \sum_{i=1}^{n} m_i \cdot \bigg(cos\big(2\pi (t f_i + p_i)\big) + j \cdot sin\big(2\pi (t f_i + p_i)\big)\bigg)
+$$
+
+
+```python
+f_m_p = [ (f,round(m,2),round(p,2)) for f,m,p in components if m>0.01 ]
+calc.f,calc.m,calc.p = zip(*f_m_p)
+calc.n_f = len(f_m_p)
+
+def unit_vector(theta):
+    return calc.point(calc.cos(theta), calc.sin(theta))
+
+@calc.function
+def ohio(t, n):
+    def component(i):
+        return calc.m[i-1] * unit_vector(2*calc.pi * (t*calc.f[i-1] + calc.p[i-1]))
+    return calc.sum(component, i=[1,n])
+
+calc.t_c = 0
+calc.f_scarlet = ohio(2*calc.range(1,10001)/10000, calc.n_f)
+calc.f_gray = ohio(calc.t_c, calc.range(1,calc.n_f+1))
+calc.f_dot = ohio(calc.t_c, calc.n_f)
+```
+
+Finally, we do a bit of formatting and display the results!
+
+![](fourier-script-ohio.png)
+
+```python
+calc.t_c.config(sliderBounds={'min': 0, 'max': 1}, playing=True) #, animationPeriod=80000, loopMode="LOOP_FORWARD")
+calc.f_scarlet.config(points=False, lines=True, lineWidth=5, color="#BE0119")
+calc.f_gray.config(points=True, pointSize=3, lines=True, lineWidth=1, color="#111111")
+calc.f_dot.config(pointSize=20, pointStyle="OPEN", color="black")
+
+calc.bounds(left=-50, right=350, bottom=-25, top=275)
+calc.show(clear=False)
+```
+
+
+
+<iframe
+    width="1200"
+    height="600"
+    src="data:text/html;base64,Cjxib2R5IHN0eWxlPSJiYWNrZ3JvdW5kLWNvbG9yOiMyQTJBMkE7IiBtYXJnaW53aWR0aD0iMHB4IiBtYXJnaW5oZWlnaHQ9IjBweCI+CjxzdHlsZT4KLmRjZy1zbWFydC10ZXh0YXJlYS1jb250YWluZXIgewogICAgbWluLWhlaWdodDogMjQ7Cn0KPC9zdHlsZT4KPHNjcmlwdCBzcmM9Imh0dHBzOi8vd3d3LmRlc21vcy5jb20vYXBpL3YxLjEwL2NhbGN1bGF0b3IuanM/YXBpS2V5PWRjYjMxNzA5YjQ1MmIxY2Y5ZGMyNjk3MmFkZDBmZGE2Ij48L3NjcmlwdD4KPGRpdiBpZD0iY2FsY3VsYXRvciI+PC9kaXY+CjxzY3JpcHQ+CiAgdmFyIGVsdCA9IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCJjYWxjdWxhdG9yIik7CiAgdmFyIGNhbGN1bGF0b3IgPSBEZXNtb3MuR3JhcGhpbmdDYWxjdWxhdG9yKGVsdCwgb3B0aW9ucz17InNob3dHcmlkIjogZmFsc2UsICJzaG93WEF4aXMiOiBmYWxzZSwgInNob3dZQXhpcyI6IGZhbHNlfSk7CiAgY2FsY3VsYXRvci5zZXRFeHByZXNzaW9uKHsibGF0ZXgiOiAiZiA9IFswLCAtMSwgMSwgLTIsIDIsIC0zLCAzLCAtNCwgNCwgLTUsIDUsIC02LCA2LCAtNywgNywgLTgsIDgsIC05LCA5LCAtMTAsIDEwLCAtMTEsIDExLCAtMTIsIDEyLCAtMTMsIDEzLCAtMTQsIDE0LCAtMTUsIDE1LCAtMTYsIDE2LCAtMTcsIDE3LCAtMTgsIDE4LCAtMTksIDE5LCAtMjAsIDIwLCAtMjEsIDIxLCAtMjIsIDIyLCAtMjMsIDIzLCAtMjQsIDI0LCAtMjUsIDI1LCAtMjYsIDI2LCAtMjcsIDI3LCAtMjgsIDI4LCAtMjksIDI5LCAtMzAsIDMwLCAtMzEsIDMxLCAtMzIsIDMyLCAtMzMsIC0zNCwgMzQsIC0zNSwgMzUsIC0zNiwgMzYsIC0zNywgMzcsIC0zOCwgMzgsIC0zOSwgMzksIC00MCwgNDAsIC00MSwgNDEsIC00MiwgNDIsIC00MywgNDMsIC00NCwgLTQ1LCA0NSwgLTQ2LCA0NiwgLTQ3LCA0NywgLTQ4LCA0OCwgLTQ5LCA0OSwgLTUwLCA1MCwgLTUxLCA1MSwgLTUyLCA1MiwgLTUzLCA1MywgLTU0LCA1NCwgLTU1LCA1NSwgLTU2LCA1NiwgLTU3LCA1NywgLTU4LCA1OCwgLTU5LCA1OSwgLTYwLCA2MCwgLTYxLCA2MSwgLTYyLCA2MiwgLTYzLCA2MywgLTY0LCA2NCwgLTY1LCA2NSwgLTY2LCA2NiwgLTY3LCA2NywgLTY4LCA2OCwgLTY5LCA2OSwgLTcwLCA3MCwgLTcxLCA3MSwgLTcyLCAtNzMsIDczLCAtNzQsIDc0LCAtNzUsIDc1LCAtNzYsIDc2LCAtNzcsIC03OCwgLTc5LCAtODAsIDgwLCAtODEsIDgxLCAtODIsIDgyLCAtODMsIDgzLCAtODQsIDg0LCAtODUsIDg1LCA4NywgLTg4LCA4OSwgLTkwLCA5MCwgLTkyLCA5MiwgLTkzLCA5MywgLTk0LCA5NCwgLTk1LCA5NSwgLTk2LCA5NiwgLTk3LCA5OSwgLTEwMSwgMTAxLCAtMTAyLCAxMDIsIC0xMDMsIDEwMywgLTEwNCwgLTEwNSwgMTA1LCAtMTA2LCAxMDYsIC0xMDcsIDEwNywgMTA4LCAtMTEwLCAtMTEyLCAxMTgsIC0xMTksIDExOSwgMTgzLCAxODUsIDE4OSwgMTkyLCAxOTMsIDE5NCwgMTk1LCAxOTYsIDE5NywgMTk4LCAxOTksIDIwMCwgMjAxLCAyMDIsIDIwMywgMjA0LCAyMDUsIDIwNiwgMjA3LCAyMDgsIDIwOSwgMjExLCAyMTMsIDIxNSwgMjE5XSJ9KTsKICBjYWxjdWxhdG9yLnNldEV4cHJlc3Npb24oeyJsYXRleCI6ICJtID0gWzIwNC4yNSwgMjMuOCwgMzAuNTYsIDEwLjI0LCAzNi45LCA2LjA5LCAzOS43MywgNi43NSwgMjkuNCwgMy44MiwgMjguNzQsIDQuODIsIDE2LjU4LCA1LjIzLCAxNy44LCAzLjU2LCA5LjUsIDQuMCwgMTEuNDEsIDAuNjUsIDQuMjMsIDQuMjYsIDkuNjksIDQuNjMsIDExLjI4LCAxLjk1LCAxLjc0LCAzLjkzLCA1LjAsIDEuODEsIDEuMjEsIDEuMDgsIDMuNzEsIDAuNDMsIDQuOTUsIDAuNjQsIDQuMzgsIDMuMDYsIDEuNDcsIDIuNDcsIDQuMDMsIDEuMTEsIDAuODcsIDEuNCwgMS45LCAwLjQzLCAxLjcxLCAwLjc5LCAxLjIsIDEuMDEsIDAuODgsIDEuNzgsIDEuOTMsIDEuMSwgMC42MSwgMS4wMywgMS41OSwgMC44NywgMC41OCwgMC45LCAxLjM2LCAxLjAsIDIuNDgsIDAuNTksIDEuNjQsIDAuNzUsIDEuNzIsIDAuNDYsIDEuNzcsIDEuMDgsIDAuODksIDAuNzEsIDEuMCwgMC42OSwgMS4wNywgMS40NywgMC45MiwgMC44NiwgMC4yMywgMS4yMSwgMC4zMywgMS4xMSwgMC41OCwgMC41MywgMC40LCAwLjcsIDAuMTUsIDAuMjQsIDAuNjIsIDEuMiwgMC43NCwgMC4zNywgMC4xNywgMC45MSwgMC4zMSwgMC4yNywgMC4yOSwgMC42OSwgMC4zNywgMC45MSwgMC4zNywgMC41NSwgMC41OCwgMC4zOCwgMS4wLCAwLjMxLCAwLjg2LCAwLjQyLCAwLjMzLCAwLjU0LCAwLjQ1LCAwLjUsIDAuNDIsIDAuNDIsIDAuMzcsIDAuNSwgMC42NiwgMC4yNCwgMC41OSwgMC4xNiwgMC4zLCAwLjI2LCAwLjE5LCAwLjEzLCAwLjQ1LCAwLjMyLCAwLjQsIDAuNjIsIDAuMjIsIDAuNCwgMC40MSwgMC4xNCwgMC4xMiwgMC40MywgMC4zMSwgMC4zMiwgMC4xMiwgMC40LCAwLjQ4LCAwLjMyLCAwLjE5LCAwLjU4LCAwLjE2LCAwLjMxLCAwLjI2LCAwLjI5LCAwLjE0LCAwLjE5LCAwLjUsIDAuNCwgMC41MSwgMC4yNSwgMC4yLCAwLjIyLCAwLjUsIDAuNDMsIDAuMzUsIDAuMjUsIDAuMzksIDAuMzIsIDAuMzIsIDAuMzksIDAuMTEsIDAuMTksIDAuMTQsIDAuMTUsIDAuMjUsIDAuMTksIDAuMjQsIDAuMTYsIDAuMTQsIDAuMzQsIDAuMTIsIDAuMjIsIDAuMjMsIDAuMjQsIDAuMjEsIDAuMzEsIDAuMjksIDAuMTQsIDAuMjcsIDAuMTQsIDAuMTgsIDAuMTEsIDAuMSwgMC4xMSwgMC4xMywgMC4xMSwgMC4xNywgMC4yLCAwLjE2LCAwLjIxLCAwLjE2LCAwLjE2LCAwLjEyLCAwLjEsIDAuMTMsIDAuMTIsIDAuMTIsIDAuMTEsIDAuMTMsIDAuMTcsIDAuMTYsIDAuMTUsIDAuMTYsIDAuMjEsIDAuMywgMC42NSwgMC40LCAwLjk1LCAwLjQyLCAxLjQzLCAyLjg4LCAyLjM5LCAwLjQsIDAuNTMsIDAuNDIsIDAuMiwgMC4zNiwgMC40NSwgMC4yLCAwLjMzLCAwLjE3LCAwLjIyLCAwLjE1LCAwLjEzXSJ9KTsKICBjYWxjdWxhdG9yLnNldEV4cHJlc3Npb24oeyJsYXRleCI6ICJwID0gWzAuMTIsIC0wLjIyLCAwLjE4LCAwLjI1LCAtMC4zOSwgLTAuMzcsIC0wLjM4LCAtMC4wNSwgMC40NywgMC4yNiwgMC4zNywgMC4xNSwgMC4yOCwgMC4wMSwgLTAuNDEsIC0wLjA5LCAwLjQzLCAtMC40OCwgLTAuMDksIDAuMjYsIC0wLjQ4LCAtMC4xMSwgMC40NiwgLTAuMTMsIDAuNDgsIC0wLjM1LCAwLjAzLCAwLjI1LCAwLjA2LCAtMC4xNSwgLTAuMywgMC40NCwgMC4zOSwgLTAuMTUsIC0wLjQzLCAtMC4wNSwgLTAuMzIsIDAuMDMsIDAuNDMsIDAuMTEsIDAuNDYsIDAuMDgsIDAuMzUsIC0wLjI3LCAtMC4xOSwgMC4wLCAtMC4yNSwgLTAuMDgsIC0wLjQyLCAwLjAsIDAuNDMsIC0wLjEyLCAtMC4zNCwgLTAuNCwgLTAuMTcsIDAuMjksIDAuMjYsIDAuNDQsIDAuMiwgMC4xMSwgLTAuMzQsIC0wLjA1LCAtMC4zNSwgLTAuMDYsIC0wLjQ0LCAtMC4wNCwgMC4wOSwgLTAuMTYsIDAuMDUsIC0wLjM3LCAwLjE4LCAtMC40OCwgLTAuMTIsIC0wLjM3LCAtMC4xNywgLTAuMTEsIDAuMDUsIDAuMTEsIDAuMTcsIDAuMjQsIC0wLjQ5LCAwLjIsIC0wLjE5LCAtMC4xNCwgLTAuMDMsIC0wLjE5LCAwLjAyLCAtMC4xMSwgMC4yNywgLTAuMDgsIC0wLjQ2LCAwLjEsIC0wLjM4LCAwLjIsIDAuNDIsIC0wLjM1LCAtMC4wNCwgLTAuMTQsIDAuMDIsIC0wLjIyLCAtMC4xOSwgLTAuNDUsIDAuMTgsIC0wLjQ1LCAwLjI0LCAwLjAzLCAwLjI3LCAtMC4wNSwgMC4yMiwgMC40NCwgMC4xLCAtMC40NiwgMC4yOCwgLTAuNDIsIDAuMjMsIDAuMTMsIDAuMzgsIDAuMDMsIC0wLjM4LCAwLjQ2LCAtMC4zMSwgLTAuMiwgLTAuMzMsIDAuMzgsIDAuMDIsIDAuNDksIC0wLjAyLCAtMC40NCwgLTAuMTYsIC0wLjI4LCAtMC4zNSwgMC40NiwgMC4wLCAwLjE3LCAwLjI2LCAtMC40NywgMC4xNCwgMC4zOSwgMC4yNywgMC4zNywgMC40MSwgMC4zNSwgMC4xNywgLTAuNDQsIC0wLjA2LCAtMC4zNywgLTAuMDksIC0wLjE0LCAwLjQxLCAtMC4wMiwgMC40MSwgLTAuNDcsIDAuMDUsIC0wLjIzLCAtMC4xNSwgMC40MiwgMC4wNCwgMC4zLCAwLjM0LCAwLjI3LCAwLjI5LCAwLjE1LCAwLjI5LCAwLjIyLCAtMC4xMywgMC4wNSwgMC4wMiwgLTAuMTQsIDAuMjYsIDAuMjIsIC0wLjQ4LCAwLjAsIC0wLjM5LCAwLjA4LCAtMC40NSwgMC4xNCwgMC4zMiwgMC4yNCwgMC4yNiwgMC4yNCwgMC4yMSwgMC4yLCAwLjM3LCAwLjA1LCAwLjAxLCAtMC40NCwgLTAuMjQsIC0wLjIsIC0wLjE4LCAtMC4zNSwgLTAuMDIsIC0wLjQ4LCAwLjEzLCAtMC41LCAwLjI2LCAwLjM5LCAwLjM1LCAwLjQ2LCAwLjA2LCAwLjQsIDAuMTksIDAuNDksIC0wLjE0LCAtMC4wOSwgMC4wOSwgMC4wMywgMC4zNCwgMC40MSwgLTAuNDEsIC0wLjIyLCAtMC4xOCwgMC4yNywgLTAuMTcsIDAuMjcsIDAuMzEsIC0wLjM2LCAtMC40NywgMC40NiwgLTAuMjIsIC0wLjE4LCAwLjA2LCAwLjE5LCAtMC4zMSwgMC4xNiwgLTAuNDcsIC0wLjI4XSJ9KTsKICBjYWxjdWxhdG9yLnNldEV4cHJlc3Npb24oeyJsYXRleCI6ICJuX3tmfSA9IDIyNiJ9KTsKICBjYWxjdWxhdG9yLnNldEV4cHJlc3Npb24oeyJsYXRleCI6ICJmX3tvaGlvfXtcXGxlZnQodCxuIFxccmlnaHQpfSA9IFxcc3VtX3tpPTF9XntufSAoXFxjb3N7XFxsZWZ0KFxccGkgXFxsZWZ0KDIgdCB7Zn1baV0gKyAyIHtwfVtpXVxccmlnaHQpIFxccmlnaHQpfSwgXFxzaW57XFxsZWZ0KFxccGkgXFxsZWZ0KDIgdCB7Zn1baV0gKyAyIHtwfVtpXVxccmlnaHQpIFxccmlnaHQpfSkge219W2ldIn0pOwogIGNhbGN1bGF0b3Iuc2V0RXhwcmVzc2lvbih7ImxhdGV4IjogInRfe2N9ID0gMCIsICJzbGlkZXJCb3VuZHMiOiB7Im1pbiI6IDAsICJtYXgiOiAxfSwgInBsYXlpbmciOiB0cnVlfSk7CiAgY2FsY3VsYXRvci5zZXRFeHByZXNzaW9uKHsibGF0ZXgiOiAiZl97c2NhcmxldH0gPSBmX3tvaGlvfXtcXGxlZnQoXFxmcmFje1sxLi4uMTAwMDBdfXs1MDAwfSxuX3tmfSBcXHJpZ2h0KX0iLCAicG9pbnRzIjogZmFsc2UsICJsaW5lcyI6IHRydWUsICJsaW5lV2lkdGgiOiA1LCAiY29sb3IiOiAiI0JFMDExOSJ9KTsKICBjYWxjdWxhdG9yLnNldEV4cHJlc3Npb24oeyJsYXRleCI6ICJmX3tncmF5fSA9IGZfe29oaW99e1xcbGVmdCh0X3tjfSxbMS4uLm5fe2Z9XSBcXHJpZ2h0KX0iLCAicG9pbnRzIjogdHJ1ZSwgInBvaW50U2l6ZSI6IDMsICJsaW5lcyI6IHRydWUsICJsaW5lV2lkdGgiOiAxLCAiY29sb3IiOiAiIzExMTExMSJ9KTsKICBjYWxjdWxhdG9yLnNldEV4cHJlc3Npb24oeyJsYXRleCI6ICJmX3tkb3R9ID0gZl97b2hpb317XFxsZWZ0KHRfe2N9LG5fe2Z9IFxccmlnaHQpfSIsICJwb2ludFNpemUiOiAyMCwgInBvaW50U3R5bGUiOiAiT1BFTiIsICJjb2xvciI6ICJibGFjayJ9KTsKCiAgc3RhdGUgPSBjYWxjdWxhdG9yLmdldFN0YXRlKCk7CiAgZXhwciA9IHN0YXRlLmV4cHJlc3Npb25zLmxpc3Q7CiAgZm9sZGVycyA9IHt9OwogIGZvciAoZm9sZGVyIGluIGZvbGRlcnMpIHsKICAgIGV4cHJbZm9sZGVyXS50eXBlID0gJ2ZvbGRlcic7CiAgICBleHByW2ZvbGRlcl0udGl0bGUgPSBleHByW2ZvbGRlcl0udGV4dDsKICAgIGV4cHJbZm9sZGVyXS5jb2xsYXBzZWQgPSB0cnVlOwogICAgZm9yIChtZW1iZXIgb2YgZm9sZGVyc1tmb2xkZXJdKSB7CiAgICAgIGV4cHJbbWVtYmVyXS5mb2xkZXJJZCA9IGV4cHJbZm9sZGVyXS5pZDsKICAgIH0KICB9CiAgY2FsY3VsYXRvci5zZXRTdGF0ZShzdGF0ZSk7CiAgY2FsY3VsYXRvci5zZXRNYXRoQm91bmRzKHtsZWZ0OiAtNTAsIHJpZ2h0OiAzNTAsIGJvdHRvbTogLTI1LCB0b3A6IDI3NX0pOwo8L3NjcmlwdD4K"
+    frameborder="0"
+    allowfullscreen
+
+></iframe>
+
+
+
+We <code>show</code>'ed that with <code>clear=False</code>, so calc remains fully intact.  [Let's save a second copy to an HTML file; see it *here*.](https://nbviewer.org/github/timdechant/desmospy/blob/main/examples/fourier-script-ohio/fourier-script-ohio.htm).
+
+
+```python
+calc.save('fourier-script-ohio.htm')
+```
