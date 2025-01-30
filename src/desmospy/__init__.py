@@ -122,12 +122,12 @@ class ExpressionCollection(object):
         upper = Statement.ref(upper)
         return Statement(sympy.Sum(expr, (index,lower,upper)))
 
-    def substitute(self, value, cls=None):
+    def substitute(self, value, cls=None, **kwargs):
         if cls is None:
             cls = Statement
         var = 'v_{custom%04d}'%len(self._root._substitutions)
         self._root._substitutions[var] = value
-        return cls(var)
+        return cls(var, **kwargs)
     
     def point(self, *args):
         """
@@ -406,9 +406,19 @@ class Statement(Expression):
         return (self >= 0) ^ other
     def __rxor__(self, other):
         return other ^ (self >= 0)
-        
+
     def __str__(self):
         return str(self.expr)
+
+class StatementAttribute(Statement):
+    def __init__(self, statement, attr):
+        self._statement = statement
+        self._attr = attr
+        class AttrSymbol(sympy.Symbol):
+            def _latex(self, printer):
+                return f'{str(statement)}.{attr}'
+        self.expr = AttrSymbol(f'{str(statement)}.{attr}')
+
 
 class IndexedBase(Statement):
     def __init__(self, base):
@@ -425,6 +435,10 @@ class IndexedBase(Statement):
         val = Statement()
         val.expr = self.Indexed(self.expr, index)
         return val
+        
+    @property
+    def length(self):
+        return StatementAttribute(self, 'length')
 
 class IndexedBaseValue(Statement):
     """
