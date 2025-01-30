@@ -99,7 +99,7 @@ calc.f_dot.config(pointSize=20, pointStyle="OPEN", color="black")
 calc.bounds(left=-50, right=350, bottom=-25, top=275)
 calc.show(clear=False)
 ```
-![](fourier-script-ohio.gif)
+[<img src="fourier-script-ohio.gif">](https://nbviewer.org/github/timdechant/desmospy/blob/main/examples/fourier-script-ohio/fourier-script-ohio.htm)
 
 We <code>show</code>'ed that with <code>clear=False</code>, so calc remains fully intact.  [Let's save a second copy to an HTML file; see it *here*.](https://nbviewer.org/github/timdechant/desmospy/blob/main/examples/fourier-script-ohio/fourier-script-ohio.htm).
 
