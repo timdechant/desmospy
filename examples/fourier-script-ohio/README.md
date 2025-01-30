@@ -4,7 +4,7 @@
 
 > [!NOTE]
 >
-> [Jump straight the output *here*.](https://nbviewer.org/github/timdechant/desmospy/blob/main/examples/fourier-script-ohio/fourier-script-ohio.htm)
+> [Jump straight to the output *here*.](https://nbviewer.org/github/timdechant/desmospy/blob/main/examples/fourier-script-ohio/fourier-script-ohio.htm)
 >
 > [See a live view as a Jupyter notebook.](https://nbviewer.org/github/timdechant/desmospy/blob/main/examples/fourier-script-ohio/fourier-script-ohio.ipynb)
 > 
