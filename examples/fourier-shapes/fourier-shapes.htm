@@ -1,0 +1,69 @@
+
+<body style="background-color:#2A2A2A;" marginwidth="0px" marginheight="0px">
+<style>
+.dcg-smart-textarea-container {
+    min-height: 24;
+}
+</style>
+<script src="https://www.desmos.com/api/v1.10/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6"></script>
+<div id="calculator"></div>
+<script>
+  var elt = document.getElementById("calculator");
+  var calculator = Desmos.GraphingCalculator(elt, options={"showGrid": false, "showXAxis": false, "showYAxis": false});
+  calculator.setExpression({"latex": "f = [0, 12, -15, 39, -42, 66, -96, -150, -204, -285, 309, -312, 336, -339, 363, -366]"});
+  calculator.setExpression({"latex": "m = [m_{0}, m_{p12}, m_{n15}, m_{p39}, m_{n42}, m_{p66}, m_{n96}, m_{n150}, m_{n204}, m_{n285}, m_{p309}, m_{n312}, m_{p336}, m_{n339}, m_{p363}, m_{n366}]"});
+  calculator.setExpression({"latex": "p = [p_{0}, p_{p12}, p_{n15}, p_{p39}, p_{n42}, p_{p66}, p_{n96}, p_{n150}, p_{n204}, p_{n285}, p_{p309}, p_{n312}, p_{p336}, p_{n339}, p_{p363}, p_{n366}]"});
+  calculator.setExpression({type: 'text', text: '<== Open folder for components!'});
+    calculator.setExpression({"latex": "m_{0} = 14.14", "sliderBounds": {"min": 0, "max": 141.4}});
+    calculator.setExpression({"latex": "p_{0} = 0.79", "sliderBounds": {"min": -3.14, "max": 3.14}});
+    calculator.setExpression({"latex": "m_{p12} = 4.37", "sliderBounds": {"min": 0, "max": 43.7}});
+    calculator.setExpression({"latex": "p_{p12} = -1.35", "sliderBounds": {"min": -3.14, "max": 3.14}});
+    calculator.setExpression({"latex": "m_{n15} = 3.8", "sliderBounds": {"min": 0, "max": 38.0}});
+    calculator.setExpression({"latex": "p_{n15} = 1.7", "sliderBounds": {"min": -3.14, "max": 3.14}});
+    calculator.setExpression({"latex": "m_{p39} = 0.56", "sliderBounds": {"min": 0, "max": 5.6}});
+    calculator.setExpression({"latex": "p_{p39} = 1.85", "sliderBounds": {"min": -3.14, "max": 3.14}});
+    calculator.setExpression({"latex": "m_{n42} = 0.51", "sliderBounds": {"min": 0, "max": 5.1}});
+    calculator.setExpression({"latex": "p_{n42} = -1.51", "sliderBounds": {"min": -3.14, "max": 3.14}});
+    calculator.setExpression({"latex": "m_{p66} = 0.2", "sliderBounds": {"min": 0, "max": 2.0}});
+    calculator.setExpression({"latex": "p_{p66} = -1.23", "sliderBounds": {"min": -3.14, "max": 3.14}});
+    calculator.setExpression({"latex": "m_{n96} = 0.2", "sliderBounds": {"min": 0, "max": 2.0}});
+    calculator.setExpression({"latex": "p_{n96} = -1.67", "sliderBounds": {"min": -3.14, "max": 3.14}});
+    calculator.setExpression({"latex": "m_{n150} = 0.15", "sliderBounds": {"min": 0, "max": 1.5}});
+    calculator.setExpression({"latex": "p_{n150} = -1.82", "sliderBounds": {"min": -3.14, "max": 3.14}});
+    calculator.setExpression({"latex": "m_{n204} = 0.12", "sliderBounds": {"min": 0, "max": 1.2}});
+    calculator.setExpression({"latex": "p_{n204} = -1.95", "sliderBounds": {"min": -3.14, "max": 3.14}});
+    calculator.setExpression({"latex": "m_{n285} = 0.65", "sliderBounds": {"min": 0, "max": 6.5}});
+    calculator.setExpression({"latex": "p_{n285} = 0.94", "sliderBounds": {"min": -3.14, "max": 3.14}});
+    calculator.setExpression({"latex": "m_{p309} = 0.4", "sliderBounds": {"min": 0, "max": 4.0}});
+    calculator.setExpression({"latex": "p_{p309} = 2.61", "sliderBounds": {"min": -3.14, "max": 3.14}});
+    calculator.setExpression({"latex": "m_{n312} = 0.27", "sliderBounds": {"min": 0, "max": 2.7}});
+    calculator.setExpression({"latex": "p_{n312} = 0.88", "sliderBounds": {"min": -3.14, "max": 3.14}});
+    calculator.setExpression({"latex": "m_{p336} = 0.16", "sliderBounds": {"min": 0, "max": 1.6}});
+    calculator.setExpression({"latex": "p_{p336} = 2.67", "sliderBounds": {"min": -3.14, "max": 3.14}});
+    calculator.setExpression({"latex": "m_{n339} = 0.17", "sliderBounds": {"min": 0, "max": 1.7}});
+    calculator.setExpression({"latex": "p_{n339} = 0.82", "sliderBounds": {"min": -3.14, "max": 3.14}});
+    calculator.setExpression({"latex": "m_{p363} = 0.15", "sliderBounds": {"min": 0, "max": 1.5}});
+    calculator.setExpression({"latex": "p_{p363} = 2.76", "sliderBounds": {"min": -3.14, "max": 3.14}});
+    calculator.setExpression({"latex": "m_{n366} = 0.15", "sliderBounds": {"min": 0, "max": 1.5}});
+    calculator.setExpression({"latex": "p_{n366} = 0.72", "sliderBounds": {"min": -3.14, "max": 3.14}});
+  calculator.setExpression({"latex": "f_{shape}{\\left(t,n \\right)} = \\sum_{i=1}^{n} (\\cos{\\left(2 \\pi t {f}[i] + {p}[i] \\right)}, \\sin{\\left(2 \\pi t {f}[i] + {p}[i] \\right)}) {m}[i]"});
+  calculator.setExpression({"latex": "t_{c} = 0", "sliderBounds": {"min": 0, "max": 1}, "playing": true});
+  calculator.setExpression({"latex": "f_{complete} = f_{shape}{\\left(\\frac{[1...3000]}{3000},16 \\right)}", "points": false, "lines": true, "lineWidth": 5, "color": "#87A5C4"});
+  calculator.setExpression({"latex": "f_{trace} = f_{shape}{\\left(t_{c},[1...16] \\right)}", "points": true, "pointSize": 3, "lines": true, "lineWidth": 1, "color": "#111111"});
+  calculator.setExpression({"latex": "f_{dot} = f_{shape}{\\left(t_{c},16 \\right)}", "pointSize": 20, "pointStyle": "OPEN", "color": "black"});
+
+  state = calculator.getState();
+  expr = state.expressions.list;
+  folders = {3: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35]};
+  for (folder in folders) {
+    expr[folder].type = 'folder';
+    expr[folder].title = expr[folder].text;
+    expr[folder].collapsed = true;
+    for (member of folders[folder]) {
+      expr[member].folderId = expr[folder].id;
+    }
+  }
+  calculator.setState(state);
+  calculator.setDefaultState(state)
+  calculator.setMathBounds({left: -3, right: 23, bottom: 0, top: 20});
+</script>
