@@ -119,7 +119,7 @@ calc.show(clear=False)
 ```
 [<img src="fourier-shapes.gif">](https://nbviewer.org/github/timdechant/desmospy/blob/main/examples/fourier-shapes/fourier-shapes.htm)
 
-We <code>show</code>'ed that with <code>clear=False</code>, so calc remains fully intact.  [Let's save a second copy to an HTML file; see it *here*.](https://nbviewer.org/github/timdechant/desmospy/blob/main/examples/fourier-script-shape/fourier-script-shape.htm).
+We <code>show</code>'ed that with <code>clear=False</code>, so calc remains fully intact.  [Let's save a second copy to an HTML file; see it *here*.](https://nbviewer.org/github/timdechant/desmospy/blob/main/examples/fourier-shapes/fourier-shapes.htm).
 
 
 ```python
