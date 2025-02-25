@@ -40,8 +40,6 @@ j=(0+1j)
 
 shape = np.loadtxt('shape.csv', skiprows=1, delimiter=",", dtype=float)
 fft = np.fft.fft(shape[:,0] + j*shape[:,1])
-if not (fft.shape[0] % 2):
-    pass#fft = fft[:-1]
 fft = np.fft.fftshift(fft)
 
 n = fft.shape[0]
