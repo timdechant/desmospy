@@ -55,7 +55,7 @@ components.sort(key=lambda fmp: abs(fmp[0]))
 
 ## Desmos Expressions
 
-FFT converts the time-domain (or in our case, the 2D space domain) points into frequency components.
+FFT converts the time-domain points (as a 2D sequence) into frequency components.
 
 Each frequency component is define by three values: magnitude $m_i$, frequency $f_i$, and starting phase/angle $p_i$.
 
