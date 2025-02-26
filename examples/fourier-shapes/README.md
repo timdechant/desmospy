@@ -57,7 +57,7 @@ components.sort(key=lambda fmp: abs(fmp[0]))
 
 FFT converts the time-domain points (as a 2D sequence) into frequency components.
 
-Each frequency component is define by three values: magnitude $m_i$, frequency $f_i$, and starting phase/angle $p_i$.
+Each frequency component has three properties: frequency $f_i$, magnitude $m_i$, and starting phase/angle $p_i$.
 
 We will load these values into Desmos, then algebraically calculate the Inverse Fourier Transform:
 
