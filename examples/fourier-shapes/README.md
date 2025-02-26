@@ -67,11 +67,8 @@ $$
 
 
 ```python
-f_max = max(abs(f) for f,m,p in components if m > 0.08)
-
-f_m_p = [ (f,round(m,2),round(p,2)) for f,m,p in components if m > 0.12]# if abs(f) <= f_max]
+f_m_p = [ (f,round(m,2),round(p,2)) for f,m,p in components if m > 0.12]
 f,m,p = zip(*f_m_p)
-# calc.n_f = len(f)
 
 def subscript(f):
     sign_char = 'p' if f > 0 else 'n' if f < 0 else ''
