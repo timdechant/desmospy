@@ -75,4 +75,6 @@ c.show()
 [![Figure 5](https://raw.githubusercontent.com/timdechant/desmospy/main/img/README_fig5.png)](https://raw.githubusercontent.com/timdechant/desmospy/main/img/README_fig5.png)
 
 
-$99.9%^365 = 2.6%$
+$$
+99.9%^365 = 2.6%
+$$
